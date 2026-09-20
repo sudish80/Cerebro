@@ -1,0 +1,82 @@
+flowchart TD
+    subgraph Input["Ensemble Input"]
+        STATE[State String\n"BLK:1|T:...|O:100|..."]
+        CFG[EnsembleConfig\nqueryCount: 3\nmethod: weighted\nconfThresh: 0.3]
+    end
+
+    subgraph Angles["4 Instruction Angles"]
+        ANG1[Angle 1: Momentum\n"Focus on MOMENTUM and TREND...\nMACD crossovers, RSI extremes,\nvolume confirmation"]
+        ANG2[Angle 2: Risk\n"Focus on RISK MANAGEMENT...\ndrawdown limits, position sizing,\nstop-loss levels, risk/reward"]
+        ANG3[Angle 3: Mean Reversion\n"Focus on MEAN REVERSION...\nprice extremes, Bollinger touches,\nRSI divergence, oversold/overbought"]
+        ANG4[Angle 4: Breakout\n"Focus on BREAKOUT...\nconsolidation, Bollinger squeeze,\nvolume spikes, ATR expansion"]
+    end
+
+    subgraph Query["Parallel Jev Queries"]
+        Q1[queryJevWithQuestion\n(state, angle1) → JevDecision1]
+        Q2[queryJevWithQuestion\n(state, angle2) → JevDecision2]
+        Q3[queryJevWithQuestion\n(state, angle3) → JevDecision3]
+        Q4[queryJevWithQuestion\n(state, angle4) → JevDecision4]
+    end
+
+    subgraph Votes["Vote Collection"]
+        V1[Vote1: {choice, prob, conf}]
+        V2[Vote2: {choice, prob, conf}]
+        V3[Vote3: {choice, prob, conf}]
+        V4[Vote4: {choice, prob, conf}]
+        FILTER[Filter: conf ≥ 0.3]
+    end
+
+    subgraph Methods["Aggregation Methods"]
+        MAJ[Majority Voting\nCount votes per choice\nPick highest count\nTie → HOLD]
+        WGT[Weighted Voting\nΣ(prob × conf) per choice\nPick highest weighted sum]
+        CON[Consensus\nAll non-HOLD agree?\n  All BUY → BUY\n  All SELL → SELL\n  Else → HOLD]
+    end
+
+    subgraph Output["EnsembleDecision"]
+        FINAL[finalDecision: BUY/SELL/HOLD\nfinalProbability: weighted avg\nfinalConfidence: weighted avg\nvotes: [...4 votes]\nagreement: 0-1\nmethod: majority/weighted/consensus]
+    end
+
+    STATE --> Q1
+    STATE --> Q2
+    STATE --> Q3
+    STATE --> Q4
+    CFG --> Q1
+    CFG --> Q2
+    CFG --> Q3
+    CFG --> Q4
+
+    ANG1 --> Q1
+    ANG2 --> Q2
+    ANG3 --> Q3
+    ANG4 --> Q4
+
+    Q1 --> V1
+    Q2 --> V2
+    Q3 --> V3
+    Q4 --> V4
+
+    V1 --> FILTER
+    V2 --> FILTER
+    V3 --> FILTER
+    V4 --> FILTER
+
+    FILTER --> MAJ
+    FILTER --> WGT
+    FILTER --> CON
+
+    CFG --> MAJ
+    CFG --> WGT
+    CFG --> CON
+
+    MAJ --> FINAL
+    WGT --> FINAL
+    CON --> FINAL
+
+    style Q1 fill:#fff3e0,stroke:#e65100
+    style Q2 fill:#fff3e0,stroke:#e65100
+    style Q3 fill:#fff3e0,stroke:#e65100
+    style Q4 fill:#fff3e0,stroke:#e65100
+    style MAJ fill:#e3f2fd,stroke:#0d47a1
+    style WGT fill:#e3f2fd,stroke:#0d47a1
+    style CON fill:#e3f2fd,stroke:#0d47a1
+    style FINAL fill:#e8f5e9,stroke:#1b5e20

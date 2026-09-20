@@ -1,0 +1,110 @@
+flowchart LR
+    subgraph Tick["Single Tick (200ms)"]
+        direction TB
+        
+        subgraph Input["1. Input"]
+            BAR_IN[New Bar\nOHLCV]
+            OB_IN[Order Book\nSnapshot]
+        end
+        
+        subgraph Compute["2. Compute"]
+            IND_C[computeAllIndicators\n136 values]
+            MTF_C[computeMultiTimeframe\nDownsample → 4 TFs]
+            ATR_C[calcATR\nATR(14)]
+        end
+        
+        subgraph Format["3. Format State"]
+            BLK[StateBlock\nbar, ob, indicators, portfolio]
+            STR[formatStateBlock\n"BLK:1|T:...|O:100|..."]
+        end
+        
+        subgraph Brain["4. AI Decision"]
+            QRY[queryJev / queryEnsemble\nHTTPS POST → TypeSafe]
+            ENS[Ensemble Aggregation\nMajority/Weighted/Consensus]
+            FALL[Fallback: HOLD\nif timeout/error]
+        end
+        
+        subgraph Safety["5. Risk Gates"]
+            R0[Rule 0: Cooldown\nactive? → REJECT]
+            B1[Rule B1: Max Drawdown\n>3%? → REJECT]
+            B2[Rule B2: Stop-Loss\nprice < entry-2ATR? → REJECT]
+            B3[Rule B3: Take-Profit\nprice > entry+3ATR? → SELL]
+            B4[Rule B4: Trailing Stop\nactivated & hit? → REJECT]
+            B5[Rule B5: Consec Losses\n≥5? → COOLDOWN]
+            B6[Rule B6: Frequency\n>10/min? → REJECT]
+            B7[Rule B7: Leverage\nexposure > 1x? → REJECT]
+            C1[Rule C: Position Size\nat max? → REJECT]
+            A1[Rule A: Probability\n≤0.88? → REJECT]
+            SZ[Position Sizing\n2% equity / price]
+        end
+        
+        subgraph Comply["6. Compliance"]
+            KYC[checkTransaction\nfrom, to, value, ts]
+            SCR[Screen\nsanctions, PEP, mixer]
+        end
+        
+        subgraph Execute["7. Execute"]
+            RT[routeOrder\nIOC/LIMIT/SPLIT]
+            SIM[simulate eth_call]
+            SIGN[viem sign tx]
+            BCAST[broadcast tx]
+            RECP[receipt + nonce]
+        end
+        
+        subgraph Record["8. Record"]
+            PORT[updatePortfolio\nbalance, pos, avgEntry, fees]
+            RTN[recordTradeOutcome\npnl → risk engine]
+            PERS[saveTrade\nfull TradeRecord]
+            CHKP[checkpoint\nportfolio + risk state]
+        end
+    end
+
+    BAR_IN --> IND_C
+    OB_IN --> IND_C
+    IND_C --> MTF_C
+    MTF_C --> ATR_C
+    ATR_C --> BLK
+    BLK --> STR
+    STR --> QRY
+    QRY --> ENS
+    ENS -.-> FALL
+    ENS --> R0
+    R0 --> B1
+    B1 --> B2
+    B2 --> B3
+    B3 --> B4
+    B4 --> B5
+    B5 --> B6
+    B6 --> B7
+    B7 --> C1
+    C1 --> A1
+    A1 --> SZ
+    SZ --> KYC
+    KYC --> SCR
+    SCR --> RT
+    RT --> SIM
+    SIM --> SIGN
+    SIGN --> BCAST
+    BCAST --> RECP
+    RECP --> PORT
+    PORT --> RTN
+    RTN --> PERS
+    PERS --> CHKP
+
+    style QRY fill:#fff3e0,stroke:#e65100
+    style ENS fill:#fff3e0,stroke:#e65100
+    style FALL fill:#ffebee,stroke:#c62828
+    style R0 fill:#fce4ec,stroke:#880e4f
+    style B1 fill:#fce4ec,stroke:#880e4f
+    style B2 fill:#fce4ec,stroke:#880e4f
+    style B3 fill:#e8f5e9,stroke:#1b5e20
+    style B4 fill:#fce4ec,stroke:#880e4f
+    style B5 fill:#fce4ec,stroke:#880e4f
+    style B6 fill:#fce4ec,stroke:#880e4f
+    style B7 fill:#fce4ec,stroke:#880e4f
+    style C1 fill:#fce4ec,stroke:#880e4f
+    style A1 fill:#fce4ec,stroke:#880e4f
+    style KYC fill:#fff8e1,stroke:#f57f17
+    style SCR fill:#fff8e1,stroke:#f57f17
+    style SIGN fill:#e8f5e9,stroke:#1b5e20
+    style BCAST fill:#e8f5e9,stroke:#1b5e20

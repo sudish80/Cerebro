@@ -31,23 +31,394 @@ Cerebro Trader is a production-grade autonomous trading bot that operates on the
 
 ## Architecture
 
+### System Overview
+
+```mermaid
+flowchart TB
+    subgraph MarketData["Market Data Layer"]
+        WS[("Kuru CLOB\nWebSocket")]
+        SIM[("Simulated Feed\n(Random Walk)")]
+        FEED{MarketDataFeed<br/>Interface}
+    end
+
+    subgraph Core["Core Processing Layer"]
+        BAR[Bar Aggregator\n1s candles]
+        OB[Order Book\nParser]
+        IND[Indicators Engine\n136 indicators]
+        MTF[Multi-Timeframe\n1m/5m/15m/60m]
+        FMT[State Formatter\nDense string]
+    end
+
+    subgraph Brain["AI Brain Layer"]
+        JEV[TypeSafe Jev API]
+        ENS[Ensemble Voter\n3-5 queries]
+        ANGLE[Instruction Angles<br/>Momentum/Risk/Reversion/Breakout]
+        CACHE[Decision Cache\nSQLite + TTL]
+    end
+
+    subgraph Safety["Risk & Safety Layer"]
+        RISK[Risk Engine\nATR stops, trailing, cooldown]
+        COMP[Compliance Engine\nKYC/AML/Sanctions]
+        RL[Rate Limiter\nToken bucket + 429]
+    end
+
+    subgraph Execution["Execution Layer"]
+        EXEC[Smart Router\nIOC/LIMIT/SPLIT]
+        WALLET[viem Wallet\nSigning + Nonce]
+        REORG[Reorg Monitor\nChain reorg detection]
+    end
+
+    subgraph Persistence["Persistence Layer"]
+        SQLITE[(SQLite\nbun:sqlite)]
+        PORT[Portfolio State]
+        RSTATE[Risk State]
+        TRADES[Trade History]
+        JDEC[Jev Decisions]
+    end
+
+    subgraph Observability["Observability"]
+        MET[Prometheus\n/metrics + /health]
+        LOG[Structured Logger\nJSON + Correlation ID]
+        ALERT[Alert Manager\nTelegram/Webhook/Console]
+    end
+
+    WS --> FEED
+    SIM --> FEED
+    FEED --> BAR
+    FEED --> OB
+    BAR --> IND
+    OB --> IND
+    IND --> MTF
+    MTF --> FMT
+    FMT --> JEV
+    FMT --> ENS
+    ENS --> ANGLE
+    JEV --> CACHE
+    ENS --> CACHE
+    CACHE --> RISK
+    RISK --> COMP
+    COMP --> RL
+    RL --> EXEC
+    EXEC --> WALLET
+    WALLET --> REORG
+    EXEC --> PORT
+    RISK --> RSTATE
+    EXEC --> TRADES
+    CACHE --> JDEC
+    PORT --> SQLITE
+    RSTATE --> SQLITE
+    TRADES --> SQLITE
+    JDEC --> SQLITE
+    MET -.-> EXEC
+    MET -.-> JEV
+    MET -.-> RISK
+    LOG -.-> ALL
+    ALERT -.-> EXEC
+    ALERT -.-> RISK
+    ALERT -.-> COMP
+
+    style FEED fill:#e1f5fe,stroke:#01579b
+    style JEV fill:#fff3e0,stroke:#e65100
+    style ENS fill:#fff3e0,stroke:#e65100
+    style RISK fill:#fce4ec,stroke:#880e4f
+    style EXEC fill:#e8f5e9,stroke:#1b5e20
+    style SQLITE fill:#f3e5f5,stroke:#4a148c
+    style MET fill:#e0f2f1,stroke:#00695c
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Market     │────▶│  Indicators │────▶│   State     │────▶│    Jev      │
-│  Data Feed  │     │  (136 MTF)  │     │  Formatter  │     │   Ensemble  │
-└─────────────┘     └─────────────┘     └─────────────┘     └──────┬──────┘
-                                                                    │
-                                                                    ▼
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Executor   │◀───│  Compliance │◀───│ Risk Engine │◀───│  Decision   │
-│  (viem)     │     │  Engine     │     │  (ATR/Trail)│     │  Aggregator │
-└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
-       │                  │                  │                  │
-       ▼                  ▼                  ▼                  ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                    SQLite Persistence Layer                         │
-│  Portfolio  │  Risk State  │  Trade History  │  Jev Decisions     │
-└─────────────────────────────────────────────────────────────────────┘
+
+### Data Flow (Single Tick)
+
+```mermaid
+flowchart LR
+    subgraph Tick["Single Tick (200ms)"]
+        direction TB
+        
+        subgraph Input["1. Input"]
+            BAR_IN[New Bar\nOHLCV]
+            OB_IN[Order Book\nSnapshot]
+        end
+        
+        subgraph Compute["2. Compute"]
+            IND_C[computeAllIndicators\n136 values]
+            MTF_C[computeMultiTimeframe\nDownsample → 4 TFs]
+            ATR_C[calcATR\nATR(14)]
+        end
+        
+        subgraph Format["3. Format State"]
+            BLK[StateBlock\nbar, ob, indicators, portfolio]
+            STR[formatStateBlock\n"BLK:1|T:...|O:100|..."]
+        end
+        
+        subgraph Brain["4. AI Decision"]
+            QRY[queryJev / queryEnsemble\nHTTPS POST → TypeSafe]
+            ENS[Ensemble Aggregation\nMajority/Weighted/Consensus]
+            FALL[Fallback: HOLD\nif timeout/error]
+        end
+        
+        subgraph Safety["5. Risk Gates"]
+            R0[Rule 0: Cooldown\nactive? → REJECT]
+            B1[Rule B1: Max Drawdown\n>3%? → REJECT]
+            B2[Rule B2: Stop-Loss\nprice < entry-2ATR? → REJECT]
+            B3[Rule B3: Take-Profit\nprice > entry+3ATR? → SELL]
+            B4[Rule B4: Trailing Stop\nactivated & hit? → REJECT]
+            B5[Rule B5: Consec Losses\n≥5? → COOLDOWN]
+            B6[Rule B6: Frequency\n>10/min? → REJECT]
+            B7[Rule B7: Leverage\nexposure > 1x? → REJECT]
+            C1[Rule C: Position Size\nat max? → REJECT]
+            A1[Rule A: Probability\n≤0.88? → REJECT]
+            SZ[Position Sizing\n2% equity / price]
+        end
+        
+        subgraph Comply["6. Compliance"]
+            KYC[checkTransaction\nfrom, to, value, ts]
+            SCR[Screen\nsanctions, PEP, mixer]
+        end
+        
+        subgraph Execute["7. Execute"]
+            RT[routeOrder\nIOC/LIMIT/SPLIT]
+            SIM[simulate eth_call]
+            SIGN[viem sign tx]
+            BCAST[broadcast tx]
+            RECP[receipt + nonce]
+        end
+        
+        subgraph Record["8. Record"]
+            PORT[updatePortfolio\nbalance, pos, avgEntry, fees]
+            RTN[recordTradeOutcome\npnl → risk engine]
+            PERS[saveTrade\nfull TradeRecord]
+            CHKP[checkpoint\nportfolio + risk state]
+        end
+    end
+
+    BAR_IN --> IND_C
+    OB_IN --> IND_C
+    IND_C --> MTF_C
+    MTF_C --> ATR_C
+    ATR_C --> BLK
+    BLK --> STR
+    STR --> QRY
+    QRY --> ENS
+    ENS -.-> FALL
+    ENS --> R0
+    R0 --> B1
+    B1 --> B2
+    B2 --> B3
+    B3 --> B4
+    B4 --> B5
+    B5 --> B6
+    B6 --> B7
+    B7 --> C1
+    C1 --> A1
+    A1 --> SZ
+    SZ --> KYC
+    KYC --> SCR
+    SCR --> RT
+    RT --> SIM
+    SIM --> SIGN
+    SIGN --> BCAST
+    BCAST --> RECP
+    RECP --> PORT
+    PORT --> RTN
+    RTN --> PERS
+    PERS --> CHKP
+
+    style QRY fill:#fff3e0,stroke:#e65100
+    style ENS fill:#fff3e0,stroke:#e65100
+    style FALL fill:#ffebee,stroke:#c62828
+    style R0 fill:#fce4ec,stroke:#880e4f
+    style B1 fill:#fce4ec,stroke:#880e4f
+    style B2 fill:#fce4ec,stroke:#880e4f
+    style B3 fill:#e8f5e9,stroke:#1b5e20
+    style B4 fill:#fce4ec,stroke:#880e4f
+    style B5 fill:#fce4ec,stroke:#880e4f
+    style B6 fill:#fce4ec,stroke:#880e4f
+    style B7 fill:#fce4ec,stroke:#880e4f
+    style C1 fill:#fce4ec,stroke:#880e4f
+    style A1 fill:#fce4ec,stroke:#880e4f
+    style KYC fill:#fff8e1,stroke:#f57f17
+    style SCR fill:#fff8e1,stroke:#f57f17
+    style SIGN fill:#e8f5e9,stroke:#1b5e20
+    style BCAST fill:#e8f5e9,stroke:#1b5e20
+```
+
+### Risk Engine Evaluation Order
+
+```mermaid
+flowchart TD
+    subgraph Input["Risk Evaluation Input"]
+        DEC[JevDecision\nchoice, prob, conf]
+        PORT[PortfolioState\nbalance, pos, avgEntry, dailyPnL]
+        PRICE[Current Price\norderbook.mid]
+        ATR[ATR(14)\nfrom bars]
+    end
+
+    DEC --> R0
+    PORT --> R0
+    PORT --> B1
+    PORT --> C1
+    PRICE --> B2
+    PRICE --> B3
+    PRICE --> B4
+    PRICE --> B7
+    ATR --> B2
+    ATR --> B3
+    ATR --> B4
+    DEC --> A1
+    DEC --> B5
+
+    subgraph Rules["Evaluation Order (First Match Wins)"]
+        R0[Rule 0: Cooldown\nif now < haltUntil → REJECT "COOLDOWN_ACTIVE"]
+        
+        B1[Rule B1: Max Daily Drawdown\nif dailyPnL/balance < -3% → REJECT "MAX_DRAWDOWN"]
+        
+        B2[Rule B2: Stop-Loss (ATR)\nif pos>0 && price < avgEntry - 2×ATR → REJECT "STOP_LOSS"]
+        
+        B3[Rule B3: Take-Profit (ATR)\nif pos>0 && price > avgEntry + 3×ATR → APPROVE SELL "TAKE_PROFIT_HIT"]
+        
+        B4[Rule B4: Trailing Stop\nif pos>0:\n  if profit > 1.5×ATR → activate\n  if active && price < trailPrice → REJECT "TRAILING_STOP"\n  if newTrail > trailPrice → ratchet up]
+        
+        B5[Rule B5: Consecutive Losses\nif losses ≥ 5:\n  haltUntil = now + 30×200ms\n  REJECT "MAX_CONSECUTIVE_LOSSES"\n  ✓ FIX: after cooldown, losses reset to 0]
+        
+        B6[Rule B6: Trade Frequency\nif trades in last 60s ≥ 10 → REJECT "FREQUENCY_LIMIT"]
+        
+        B7[Rule B7: Max Leverage\nif (pos+size)×price / balance > 1.0 → REJECT "MAX_LEVERAGE_EXCEEDED"]
+        
+        C1[Rule C: Position Size\nif BUY && pos ≥ 10000 → REJECT "MAX_POSITION_REACHED"]
+        
+        A1[Rule A: Probability Threshold\nif choice≠HOLD && prob ≤ 0.88 → REJECT "PROBABILITY_BELOW_THRESHOLD"]
+    end
+
+    subgraph Sizing["Position Sizing (if APPROVE BUY)"]
+        SZ[size = floor(balance × 0.02 / price)\nsize = max(size, 1)\nsize = min(size, 10000 - pos)]
+    end
+
+    subgraph Output["RiskVerdict"]
+        APP[approved: true\naction: BUY/SELL/HOLD\nreason: "APPROVED" / rule name\nsize: calculated]
+        REJ[approved: false\naction: choice\nreason: rule name\nsize: 0]
+    end
+
+    R0 --> B1
+    B1 --> B2
+    B2 --> B3
+    B3 --> B4
+    B4 --> B5
+    B5 --> B6
+    B6 --> B7
+    B7 --> C1
+    C1 --> A1
+    A1 --> SZ
+    SZ --> APP
+    R0 -.-> REJ
+    B1 -.-> REJ
+    B2 -.-> REJ
+    B3 -.-> APP
+    B4 -.-> REJ
+    B5 -.-> REJ
+    B6 -.-> REJ
+    B7 -.-> REJ
+    C1 -.-> REJ
+    A1 -.-> REJ
+
+    style R0 fill:#fff8e1,stroke:#f57f17
+    style B1 fill:#fce4ec,stroke:#880e4f
+    style B2 fill:#fce4ec,stroke:#880e4f
+    style B3 fill:#e8f5e9,stroke:#1b5e20
+    style B4 fill:#fce4ec,stroke:#880e4f
+    style B5 fill:#fce4ec,stroke:#880e4f
+    style B6 fill:#fce4ec,stroke:#880e4f
+    style B7 fill:#fce4ec,stroke:#880e4f
+    style C1 fill:#fce4ec,stroke:#880e4f
+    style A1 fill:#fce4ec,stroke:#880e4f
+    style APP fill:#e8f5e9,stroke:#1b5e20
+    style REJ fill:#ffebee,stroke:#c62828
+    style SZ fill:#e3f2fd,stroke:#0d47a1
+```
+
+### Ensemble Decision Maker
+
+```mermaid
+flowchart TD
+    subgraph Input["Ensemble Input"]
+        STATE[State String\n"BLK:1|T:...|O:100|..."]
+        CFG[EnsembleConfig\nqueryCount: 3\nmethod: weighted\nconfThresh: 0.3]
+    end
+
+    subgraph Angles["4 Instruction Angles"]
+        ANG1[Angle 1: Momentum\n"Focus on MOMENTUM and TREND...\nMACD crossovers, RSI extremes,\nvolume confirmation"]
+        ANG2[Angle 2: Risk\n"Focus on RISK MANAGEMENT...\ndrawdown limits, position sizing,\nstop-loss levels, risk/reward"]
+        ANG3[Angle 3: Mean Reversion\n"Focus on MEAN REVERSION...\nprice extremes, Bollinger touches,\nRSI divergence, oversold/overbought"]
+        ANG4[Angle 4: Breakout\n"Focus on BREAKOUT...\nconsolidation, Bollinger squeeze,\nvolume spikes, ATR expansion"]
+    end
+
+    subgraph Query["Parallel Jev Queries"]
+        Q1[queryJevWithQuestion\n(state, angle1) → JevDecision1]
+        Q2[queryJevWithQuestion\n(state, angle2) → JevDecision2]
+        Q3[queryJevWithQuestion\n(state, angle3) → JevDecision3]
+        Q4[queryJevWithQuestion\n(state, angle4) → JevDecision4]
+    end
+
+    subgraph Votes["Vote Collection"]
+        V1[Vote1: {choice, prob, conf}]
+        V2[Vote2: {choice, prob, conf}]
+        V3[Vote3: {choice, prob, conf}]
+        V4[Vote4: {choice, prob, conf}]
+        FILTER[Filter: conf ≥ 0.3]
+    end
+
+    subgraph Methods["Aggregation Methods"]
+        MAJ[Majority Voting\nCount votes per choice\nPick highest count\nTie → HOLD]
+        WGT[Weighted Voting\nΣ(prob × conf) per choice\nPick highest weighted sum]
+        CON[Consensus\nAll non-HOLD agree?\n  All BUY → BUY\n  All SELL → SELL\n  Else → HOLD]
+    end
+
+    subgraph Output["EnsembleDecision"]
+        FINAL[finalDecision: BUY/SELL/HOLD\nfinalProbability: weighted avg\nfinalConfidence: weighted avg\nvotes: [...4 votes]\nagreement: 0-1\nmethod: majority/weighted/consensus]
+    end
+
+    STATE --> Q1
+    STATE --> Q2
+    STATE --> Q3
+    STATE --> Q4
+    CFG --> Q1
+    CFG --> Q2
+    CFG --> Q3
+    CFG --> Q4
+
+    ANG1 --> Q1
+    ANG2 --> Q2
+    ANG3 --> Q3
+    ANG4 --> Q4
+
+    Q1 --> V1
+    Q2 --> V2
+    Q3 --> V3
+    Q4 --> V4
+
+    V1 --> FILTER
+    V2 --> FILTER
+    V3 --> FILTER
+    V4 --> FILTER
+
+    FILTER --> MAJ
+    FILTER --> WGT
+    FILTER --> CON
+
+    CFG --> MAJ
+    CFG --> WGT
+    CFG --> CON
+
+    MAJ --> FINAL
+    WGT --> FINAL
+    CON --> FINAL
+
+    style Q1 fill:#fff3e0,stroke:#e65100
+    style Q2 fill:#fff3e0,stroke:#e65100
+    style Q3 fill:#fff3e0,stroke:#e65100
+    style Q4 fill:#fff3e0,stroke:#e65100
+    style MAJ fill:#e3f2fd,stroke:#0d47a1
+    style WGT fill:#e3f2fd,stroke:#0d47a1
+    style CON fill:#e3f2fd,stroke:#0d47a1
+    style FINAL fill:#e8f5e9,stroke:#1b5e20
 ```
 
 ### Module Map

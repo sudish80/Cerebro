@@ -1,0 +1,90 @@
+flowchart TB
+    subgraph MarketData["Market Data Layer"]
+        WS[("Kuru CLOB\nWebSocket")]
+        SIM[("Simulated Feed\n(Random Walk)")]
+        FEED{MarketDataFeed<br/>Interface}
+    end
+
+    subgraph Core["Core Processing Layer"]
+        BAR[Bar Aggregator\n1s candles]
+        OB[Order Book\nParser]
+        IND[Indicators Engine\n136 indicators]
+        MTF[Multi-Timeframe\n1m/5m/15m/60m]
+        FMT[State Formatter\nDense string]
+    end
+
+    subgraph Brain["AI Brain Layer"]
+        JEV[TypeSafe Jev API]
+        ENS[Ensemble Voter\n3-5 queries]
+        ANGLE[Instruction Angles<br/>Momentum/Risk/Reversion/Breakout]
+        CACHE[Decision Cache\nSQLite + TTL]
+    end
+
+    subgraph Safety["Risk & Safety Layer"]
+        RISK[Risk Engine\nATR stops, trailing, cooldown]
+        COMP[Compliance Engine\nKYC/AML/Sanctions]
+        RL[Rate Limiter\nToken bucket + 429]
+    end
+
+    subgraph Execution["Execution Layer"]
+        EXEC[Smart Router\nIOC/LIMIT/SPLIT]
+        WALLET[viem Wallet\nSigning + Nonce]
+        REORG[Reorg Monitor\nChain reorg detection]
+    end
+
+    subgraph Persistence["Persistence Layer"]
+        SQLITE[(SQLite\nbun:sqlite)]
+        PORT[Portfolio State]
+        RSTATE[Risk State]
+        TRADES[Trade History]
+        JDEC[Jev Decisions]
+    end
+
+    subgraph Observability["Observability"]
+        MET[Prometheus\n/metrics + /health]
+        LOG[Structured Logger\nJSON + Correlation ID]
+        ALERT[Alert Manager\nTelegram/Webhook/Console]
+    end
+
+    WS --> FEED
+    SIM --> FEED
+    FEED --> BAR
+    FEED --> OB
+    BAR --> IND
+    OB --> IND
+    IND --> MTF
+    MTF --> FMT
+    FMT --> JEV
+    FMT --> ENS
+    ENS --> ANGLE
+    JEV --> CACHE
+    ENS --> CACHE
+    CACHE --> RISK
+    RISK --> COMP
+    COMP --> RL
+    RL --> EXEC
+    EXEC --> WALLET
+    WALLET --> REORG
+    EXEC --> PORT
+    RISK --> RSTATE
+    EXEC --> TRADES
+    CACHE --> JDEC
+    PORT --> SQLITE
+    RSTATE --> SQLITE
+    TRADES --> SQLITE
+    JDEC --> SQLITE
+    MET -.-> EXEC
+    MET -.-> JEV
+    MET -.-> RISK
+    LOG -.-> ALL
+    ALERT -.-> EXEC
+    ALERT -.-> RISK
+    ALERT -.-> COMP
+
+    style FEED fill:#e1f5fe,stroke:#01579b
+    style JEV fill:#fff3e0,stroke:#e65100
+    style ENS fill:#fff3e0,stroke:#e65100
+    style RISK fill:#fce4ec,stroke:#880e4f
+    style EXEC fill:#e8f5e9,stroke:#1b5e20
+    style SQLITE fill:#f3e5f5,stroke:#4a148c
+    style MET fill:#e0f2f1,stroke:#00695c

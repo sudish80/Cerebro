@@ -1,0 +1,88 @@
+flowchart TD
+    subgraph Input["Risk Evaluation Input"]
+        DEC[JevDecision\nchoice, prob, conf]
+        PORT[PortfolioState\nbalance, pos, avgEntry, dailyPnL]
+        PRICE[Current Price\norderbook.mid]
+        ATR[ATR(14)\nfrom bars]
+    end
+
+    DEC --> R0
+    PORT --> R0
+    PORT --> B1
+    PORT --> C1
+    PRICE --> B2
+    PRICE --> B3
+    PRICE --> B4
+    PRICE --> B7
+    ATR --> B2
+    ATR --> B3
+    ATR --> B4
+    DEC --> A1
+    DEC --> B5
+
+    subgraph Rules["Evaluation Order (First Match Wins)"]
+        R0[Rule 0: Cooldown\nif now < haltUntil → REJECT "COOLDOWN_ACTIVE"]
+        
+        B1[Rule B1: Max Daily Drawdown\nif dailyPnL/balance < -3% → REJECT "MAX_DRAWDOWN"]
+        
+        B2[Rule B2: Stop-Loss (ATR)\nif pos>0 && price < avgEntry - 2×ATR → REJECT "STOP_LOSS"]
+        
+        B3[Rule B3: Take-Profit (ATR)\nif pos>0 && price > avgEntry + 3×ATR → APPROVE SELL "TAKE_PROFIT_HIT"]
+        
+        B4[Rule B4: Trailing Stop\nif pos>0:\n  if profit > 1.5×ATR → activate\n  if active && price < trailPrice → REJECT "TRAILING_STOP"\n  if newTrail > trailPrice → ratchet up]
+        
+        B5[Rule B5: Consecutive Losses\nif losses ≥ 5:\n  haltUntil = now + 30×200ms\n  REJECT "MAX_CONSECUTIVE_LOSSES"\n  ✓ FIX: after cooldown, losses reset to 0]
+        
+        B6[Rule B6: Trade Frequency\nif trades in last 60s ≥ 10 → REJECT "FREQUENCY_LIMIT"]
+        
+        B7[Rule B7: Max Leverage\nif (pos+size)×price / balance > 1.0 → REJECT "MAX_LEVERAGE_EXCEEDED"]
+        
+        C1[Rule C: Position Size\nif BUY && pos ≥ 10000 → REJECT "MAX_POSITION_REACHED"]
+        
+        A1[Rule A: Probability Threshold\nif choice≠HOLD && prob ≤ 0.88 → REJECT "PROBABILITY_BELOW_THRESHOLD"]
+    end
+
+    subgraph Sizing["Position Sizing (if APPROVE BUY)"]
+        SZ[size = floor(balance × 0.02 / price)\nsize = max(size, 1)\nsize = min(size, 10000 - pos)]
+    end
+
+    subgraph Output["RiskVerdict"]
+        APP[approved: true\naction: BUY/SELL/HOLD\nreason: "APPROVED" / rule name\nsize: calculated]
+        REJ[approved: false\naction: choice\nreason: rule name\nsize: 0]
+    end
+
+    R0 --> B1
+    B1 --> B2
+    B2 --> B3
+    B3 --> B4
+    B4 --> B5
+    B5 --> B6
+    B6 --> B7
+    B7 --> C1
+    C1 --> A1
+    A1 --> SZ
+    SZ --> APP
+    R0 -.-> REJ
+    B1 -.-> REJ
+    B2 -.-> REJ
+    B3 -.-> APP
+    B4 -.-> REJ
+    B5 -.-> REJ
+    B6 -.-> REJ
+    B7 -.-> REJ
+    C1 -.-> REJ
+    A1 -.-> REJ
+
+    style R0 fill:#fff8e1,stroke:#f57f17
+    style B1 fill:#fce4ec,stroke:#880e4f
+    style B2 fill:#fce4ec,stroke:#880e4f
+    style B3 fill:#e8f5e9,stroke:#1b5e20
+    style B4 fill:#fce4ec,stroke:#880e4f
+    style B5 fill:#fce4ec,stroke:#880e4f
+    style B6 fill:#fce4ec,stroke:#880e4f
+    style B7 fill:#fce4ec,stroke:#880e4f
+    style C1 fill:#fce4ec,stroke:#880e4f
+    style A1 fill:#fce4ec,stroke:#880e4f
+    style APP fill:#e8f5e9,stroke:#1b5e20
+    style REJ fill:#ffebee,stroke:#c62828
+    style SZ fill:#e3f2fd,stroke:#0d47a1
