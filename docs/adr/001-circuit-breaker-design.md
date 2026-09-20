@@ -4,7 +4,7 @@
 Accepted
 
 ## Date
-2024-01-01
+2025-09-20
 
 ## Context
 The trading bot must make decisions within a 200ms tick window. The Jev API has a typical latency of 70-500ms. If Jev is slow or down, the bot must not stall or execute on stale data.
@@ -16,7 +16,7 @@ Implement a 150ms hard timeout on the Jev API call using `Promise.race` with an 
 - The tick interval is 200ms
 - Indicator computation + state formatting takes ~5-10ms
 - Risk evaluation + execution takes ~5-10ms
--留给Jev的 budget = 200 - 20 = 180ms
+- Budget for Jev = 200 - 20 = 180ms
 - 150ms provides a 30ms safety margin for I/O overhead
 
 ### Why Promise.race?
