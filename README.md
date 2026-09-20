@@ -36,50 +36,50 @@ Cerebro Trader is a production-grade autonomous trading bot that operates on the
 ```mermaid
 flowchart TB
     subgraph MarketData["Market Data Layer"]
-        WS[("Kuru CLOB\nWebSocket")]
-        SIM[("Simulated Feed\n(Random Walk)")]
-        FEED{MarketDataFeed<br/>Interface}
+        WS["Kuru CLOB<br/>WebSocket"]
+        SIM["Simulated Feed<br/>(Random Walk)"]
+        FEED{"MarketDataFeed<br/>Interface"}
     end
 
     subgraph Core["Core Processing Layer"]
-        BAR[Bar Aggregator\n1s candles]
-        OB[Order Book\nParser]
-        IND[Indicators Engine\n136 indicators]
-        MTF[Multi-Timeframe\n1m/5m/15m/60m]
-        FMT[State Formatter\nDense string]
+        BAR["Bar Aggregator<br/>1s candles"]
+        OB["Order Book<br/>Parser"]
+        IND["Indicators Engine<br/>136 indicators"]
+        MTF["Multi-Timeframe<br/>1m/5m/15m/60m"]
+        FMT["State Formatter<br/>Dense string"]
     end
 
     subgraph Brain["AI Brain Layer"]
-        JEV[TypeSafe Jev API]
-        ENS[Ensemble Voter\n3-5 queries]
-        ANGLE[Instruction Angles<br/>Momentum/Risk/Reversion/Breakout]
-        CACHE[Decision Cache\nSQLite + TTL]
+        JEV["TypeSafe Jev API"]
+        ENS["Ensemble Voter<br/>3-5 queries"]
+        ANGLE["Instruction Angles<br/>Momentum/Risk/Reversion/Breakout"]
+        CACHE["Decision Cache<br/>SQLite + TTL"]
     end
 
     subgraph Safety["Risk & Safety Layer"]
-        RISK[Risk Engine\nATR stops, trailing, cooldown]
-        COMP[Compliance Engine\nKYC/AML/Sanctions]
-        RL[Rate Limiter\nToken bucket + 429]
+        RISK["Risk Engine<br/>ATR stops, trailing, cooldown"]
+        COMP["Compliance Engine<br/>KYC/AML/Sanctions"]
+        RL["Rate Limiter<br/>Token bucket + 429"]
     end
 
     subgraph Execution["Execution Layer"]
-        EXEC[Smart Router\nIOC/LIMIT/SPLIT]
-        WALLET[viem Wallet\nSigning + Nonce]
-        REORG[Reorg Monitor\nChain reorg detection]
+        EXEC["Smart Router<br/>IOC/LIMIT/SPLIT"]
+        WALLET["viem Wallet<br/>Signing + Nonce"]
+        REORG["Reorg Monitor<br/>Chain reorg detection"]
     end
 
     subgraph Persistence["Persistence Layer"]
-        SQLITE[(SQLite\nbun:sqlite)]
-        PORT[Portfolio State]
-        RSTATE[Risk State]
-        TRADES[Trade History]
-        JDEC[Jev Decisions]
+        SQLITE["SQLite<br/>bun:sqlite"]
+        PORT["Portfolio State"]
+        RSTATE["Risk State"]
+        TRADES["Trade History"]
+        JDEC["Jev Decisions"]
     end
 
     subgraph Observability["Observability"]
-        MET[Prometheus\n/metrics + /health]
-        LOG[Structured Logger\nJSON + Correlation ID]
-        ALERT[Alert Manager\nTelegram/Webhook/Console]
+        MET["Prometheus<br/>/metrics + /health"]
+        LOG["Structured Logger<br/>JSON + Correlation ID"]
+        ALERT["Alert Manager<br/>Telegram/Webhook/Console"]
     end
 
     WS --> FEED
@@ -134,59 +134,59 @@ flowchart LR
         direction TB
         
         subgraph Input["1. Input"]
-            BAR_IN[New Bar\nOHLCV]
-            OB_IN[Order Book\nSnapshot]
+            BAR_IN["New Bar<br/>OHLCV"]
+            OB_IN["Order Book<br/>Snapshot"]
         end
         
         subgraph Compute["2. Compute"]
-            IND_C[computeAllIndicators\n136 values]
-            MTF_C[computeMultiTimeframe\nDownsample → 4 TFs]
-            ATR_C[calcATR\nATR(14)]
+            IND_C["computeAllIndicators<br/>136 values"]
+            MTF_C["computeMultiTimeframe<br/>Downsample -> 4 TFs"]
+            ATR_C["calcATR<br/>ATR(14)"]
         end
         
         subgraph Format["3. Format State"]
-            BLK[StateBlock\nbar, ob, indicators, portfolio]
-            STR[formatStateBlock\n"BLK:1|T:...|O:100|..."]
+            BLK["StateBlock<br/>bar, ob, indicators, portfolio"]
+            STR["formatStateBlock<br/>BLK:1|T:...|O:100|..."]
         end
         
         subgraph Brain["4. AI Decision"]
-            QRY[queryJev / queryEnsemble\nHTTPS POST → TypeSafe]
-            ENS[Ensemble Aggregation\nMajority/Weighted/Consensus]
-            FALL[Fallback: HOLD\nif timeout/error]
+            QRY["queryJev / queryEnsemble<br/>HTTPS POST -> TypeSafe"]
+            ENS["Ensemble Aggregation<br/>Majority/Weighted/Consensus"]
+            FALL["Fallback: HOLD<br/>if timeout/error"]
         end
         
         subgraph Safety["5. Risk Gates"]
-            R0[Rule 0: Cooldown\nactive? → REJECT]
-            B1[Rule B1: Max Drawdown\n>3%? → REJECT]
-            B2[Rule B2: Stop-Loss\nprice < entry-2ATR? → REJECT]
-            B3[Rule B3: Take-Profit\nprice > entry+3ATR? → SELL]
-            B4[Rule B4: Trailing Stop\nactivated & hit? → REJECT]
-            B5[Rule B5: Consec Losses\n≥5? → COOLDOWN]
-            B6[Rule B6: Frequency\n>10/min? → REJECT]
-            B7[Rule B7: Leverage\nexposure > 1x? → REJECT]
-            C1[Rule C: Position Size\nat max? → REJECT]
-            A1[Rule A: Probability\n≤0.88? → REJECT]
-            SZ[Position Sizing\n2% equity / price]
+            R0["Rule 0: Cooldown<br/>active? -> REJECT"]
+            B1["Rule B1: Max Drawdown<br/>>>3%? -> REJECT"]
+            B2["Rule B2: Stop-Loss<br/>price < entry-2ATR? -> REJECT"]
+            B3["Rule B3: Take-Profit<br/>price > entry+3ATR? -> SELL"]
+            B4["Rule B4: Trailing Stop<br/>activated & hit? -> REJECT"]
+            B5["Rule B5: Consec Losses<br/>>>5? -> COOLDOWN"]
+            B6["Rule B6: Frequency<br/>>>10/min? -> REJECT"]
+            B7["Rule B7: Leverage<br/>exposure > 1x? -> REJECT"]
+            C1["Rule C: Position Size<br/>at max? -> REJECT"]
+            A1["Rule A: Probability<br/>>>0.88? -> REJECT"]
+            SZ["Position Sizing<br/>2% equity / price"]
         end
         
         subgraph Comply["6. Compliance"]
-            KYC[checkTransaction\nfrom, to, value, ts]
-            SCR[Screen\nsanctions, PEP, mixer]
+            KYC["checkTransaction<br/>from, to, value, ts"]
+            SCR["Screen<br/>sanctions, PEP, mixer"]
         end
         
         subgraph Execute["7. Execute"]
-            RT[routeOrder\nIOC/LIMIT/SPLIT]
-            SIM[simulate eth_call]
-            SIGN[viem sign tx]
-            BCAST[broadcast tx]
-            RECP[receipt + nonce]
+            RT["routeOrder<br/>IOC/LIMIT/SPLIT"]
+            SIM["simulate eth_call"]
+            SIGN["viem sign tx"]
+            BCAST["broadcast tx"]
+            RECP["receipt + nonce"]
         end
         
         subgraph Record["8. Record"]
-            PORT[updatePortfolio\nbalance, pos, avgEntry, fees]
-            RTN[recordTradeOutcome\npnl → risk engine]
-            PERS[saveTrade\nfull TradeRecord]
-            CHKP[checkpoint\nportfolio + risk state]
+            PORT["updatePortfolio<br/>balance, pos, avgEntry, fees"]
+            RTN["recordTradeOutcome<br/>pnl -> risk engine"]
+            PERS["saveTrade<br/>full TradeRecord"]
+            CHKP["checkpoint<br/>portfolio + risk state"]
         end
     end
 
@@ -246,10 +246,10 @@ flowchart LR
 ```mermaid
 flowchart TD
     subgraph Input["Risk Evaluation Input"]
-        DEC[JevDecision\nchoice, prob, conf]
-        PORT[PortfolioState\nbalance, pos, avgEntry, dailyPnL]
-        PRICE[Current Price\norderbook.mid]
-        ATR[ATR(14)\nfrom bars]
+        DEC["JevDecision<br/>choice, prob, conf"]
+        PORT["PortfolioState<br/>balance, pos, avgEntry, dailyPnL"]
+        PRICE["Current Price<br/>orderbook.mid"]
+        ATR["ATR(14)<br/>from bars"]
     end
 
     DEC --> R0
@@ -267,34 +267,34 @@ flowchart TD
     DEC --> B5
 
     subgraph Rules["Evaluation Order (First Match Wins)"]
-        R0[Rule 0: Cooldown\nif now < haltUntil → REJECT "COOLDOWN_ACTIVE"]
+        R0["Rule 0: Cooldown<br/>if now < haltUntil -> REJECT COOLDOWN_ACTIVE"]
         
-        B1[Rule B1: Max Daily Drawdown\nif dailyPnL/balance < -3% → REJECT "MAX_DRAWDOWN"]
+        B1["Rule B1: Max Daily Drawdown<br/>if dailyPnL/balance < -3% -> REJECT MAX_DRAWDOWN"]
         
-        B2[Rule B2: Stop-Loss (ATR)\nif pos>0 && price < avgEntry - 2×ATR → REJECT "STOP_LOSS"]
+        B2["Rule B2: Stop-Loss (ATR)<br/>if pos>0 && price < avgEntry - 2xATR -> REJECT STOP_LOSS"]
         
-        B3[Rule B3: Take-Profit (ATR)\nif pos>0 && price > avgEntry + 3×ATR → APPROVE SELL "TAKE_PROFIT_HIT"]
+        B3["Rule B3: Take-Profit (ATR)<br/>if pos>0 && price > avgEntry + 3xATR -> APPROVE SELL TAKE_PROFIT_HIT"]
         
-        B4[Rule B4: Trailing Stop\nif pos>0:\n  if profit > 1.5×ATR → activate\n  if active && price < trailPrice → REJECT "TRAILING_STOP"\n  if newTrail > trailPrice → ratchet up]
+        B4["Rule B4: Trailing Stop<br/>if pos>0:<br/>  if profit > 1.5xATR -> activate<br/>  if active && price < trailPrice -> REJECT TRAILING_STOP<br/>  if newTrail > trailPrice -> ratchet up"]
         
-        B5[Rule B5: Consecutive Losses\nif losses ≥ 5:\n  haltUntil = now + 30×200ms\n  REJECT "MAX_CONSECUTIVE_LOSSES"\n  ✓ FIX: after cooldown, losses reset to 0]
+        B5["Rule B5: Consecutive Losses<br/>if losses >= 5:<br/>  haltUntil = now + 30x200ms<br/>  REJECT MAX_CONSECUTIVE_LOSSES<br/>  FIX: after cooldown, losses reset to 0"]
         
-        B6[Rule B6: Trade Frequency\nif trades in last 60s ≥ 10 → REJECT "FREQUENCY_LIMIT"]
+        B6["Rule B6: Trade Frequency<br/>if trades in last 60s >= 10 -> REJECT FREQUENCY_LIMIT"]
         
-        B7[Rule B7: Max Leverage\nif (pos+size)×price / balance > 1.0 → REJECT "MAX_LEVERAGE_EXCEEDED"]
+        B7["Rule B7: Max Leverage<br/>if (pos+size)xprice / balance > 1.0 -> REJECT MAX_LEVERAGE_EXCEEDED"]
         
-        C1[Rule C: Position Size\nif BUY && pos ≥ 10000 → REJECT "MAX_POSITION_REACHED"]
+        C1["Rule C: Position Size<br/>if BUY && pos >= 10000 -> REJECT MAX_POSITION_REACHED"]
         
-        A1[Rule A: Probability Threshold\nif choice≠HOLD && prob ≤ 0.88 → REJECT "PROBABILITY_BELOW_THRESHOLD"]
+        A1["Rule A: Probability Threshold<br/>if choice!=HOLD && prob <= 0.88 -> REJECT PROBABILITY_BELOW_THRESHOLD"]
     end
 
     subgraph Sizing["Position Sizing (if APPROVE BUY)"]
-        SZ[size = floor(balance × 0.02 / price)\nsize = max(size, 1)\nsize = min(size, 10000 - pos)]
+        SZ["size = floor(balance x 0.02 / price)<br/>size = max(size, 1)<br/>size = min(size, 10000 - pos)"]
     end
 
     subgraph Output["RiskVerdict"]
-        APP[approved: true\naction: BUY/SELL/HOLD\nreason: "APPROVED" / rule name\nsize: calculated]
-        REJ[approved: false\naction: choice\nreason: rule name\nsize: 0]
+        APP["approved: true<br/>action: BUY/SELL/HOLD<br/>reason: APPROVED / rule name<br/>size: calculated"]
+        REJ["approved: false<br/>action: choice<br/>reason: rule name<br/>size: 0"]
     end
 
     R0 --> B1
@@ -339,40 +339,40 @@ flowchart TD
 ```mermaid
 flowchart TD
     subgraph Input["Ensemble Input"]
-        STATE[State String\n"BLK:1|T:...|O:100|..."]
-        CFG[EnsembleConfig\nqueryCount: 3\nmethod: weighted\nconfThresh: 0.3]
+        STATE["State String<br/>BLK:1|T:...|O:100|..."]
+        CFG["EnsembleConfig<br/>queryCount: 3<br/>method: weighted<br/>confThresh: 0.3"]
     end
 
     subgraph Angles["4 Instruction Angles"]
-        ANG1[Angle 1: Momentum\n"Focus on MOMENTUM and TREND...\nMACD crossovers, RSI extremes,\nvolume confirmation"]
-        ANG2[Angle 2: Risk\n"Focus on RISK MANAGEMENT...\ndrawdown limits, position sizing,\nstop-loss levels, risk/reward"]
-        ANG3[Angle 3: Mean Reversion\n"Focus on MEAN REVERSION...\nprice extremes, Bollinger touches,\nRSI divergence, oversold/overbought"]
-        ANG4[Angle 4: Breakout\n"Focus on BREAKOUT...\nconsolidation, Bollinger squeeze,\nvolume spikes, ATR expansion"]
+        ANG1["Angle 1: Momentum<br/>Focus on MOMENTUM and TREND<br/>MACD crossovers, RSI extremes, volume"]
+        ANG2["Angle 2: Risk<br/>Focus on RISK MANAGEMENT<br/>drawdown limits, position sizing"]
+        ANG3["Angle 3: Mean Reversion<br/>Focus on MEAN REVERSION<br/>price extremes, Bollinger, RSI divergence"]
+        ANG4["Angle 4: Breakout<br/>Focus on BREAKOUT<br/>consolidation, squeeze, volume spikes"]
     end
 
     subgraph Query["Parallel Jev Queries"]
-        Q1[queryJevWithQuestion\n(state, angle1) → JevDecision1]
-        Q2[queryJevWithQuestion\n(state, angle2) → JevDecision2]
-        Q3[queryJevWithQuestion\n(state, angle3) → JevDecision3]
-        Q4[queryJevWithQuestion\n(state, angle4) → JevDecision4]
+        Q1["queryJevWithQuestion<br/>(state, angle1) -> JevDecision1"]
+        Q2["queryJevWithQuestion<br/>(state, angle2) -> JevDecision2"]
+        Q3["queryJevWithQuestion<br/>(state, angle3) -> JevDecision3"]
+        Q4["queryJevWithQuestion<br/>(state, angle4) -> JevDecision4"]
     end
 
     subgraph Votes["Vote Collection"]
-        V1[Vote1: {choice, prob, conf}]
-        V2[Vote2: {choice, prob, conf}]
-        V3[Vote3: {choice, prob, conf}]
-        V4[Vote4: {choice, prob, conf}]
-        FILTER[Filter: conf ≥ 0.3]
+        V1["Vote1: {choice, prob, conf}"]
+        V2["Vote2: {choice, prob, conf}"]
+        V3["Vote3: {choice, prob, conf}"]
+        V4["Vote4: {choice, prob, conf}"]
+        FILTER["Filter: conf >= 0.3"]
     end
 
     subgraph Methods["Aggregation Methods"]
-        MAJ[Majority Voting\nCount votes per choice\nPick highest count\nTie → HOLD]
-        WGT[Weighted Voting\nΣ(prob × conf) per choice\nPick highest weighted sum]
-        CON[Consensus\nAll non-HOLD agree?\n  All BUY → BUY\n  All SELL → SELL\n  Else → HOLD]
+        MAJ["Majority Voting<br/>Count votes per choice<br/>Pick highest count<br/>Tie -> HOLD"]
+        WGT["Weighted Voting<br/>Sum(prob * conf) per choice<br/>Pick highest weighted sum"]
+        CON["Consensus<br/>All non-HOLD agree?<br/>All BUY -> BUY<br/>All SELL -> SELL<br/>Else -> HOLD"]
     end
 
     subgraph Output["EnsembleDecision"]
-        FINAL[finalDecision: BUY/SELL/HOLD\nfinalProbability: weighted avg\nfinalConfidence: weighted avg\nvotes: [...4 votes]\nagreement: 0-1\nmethod: majority/weighted/consensus]
+        FINAL["finalDecision: BUY/SELL/HOLD<br/>finalProbability: weighted avg<br/>finalConfidence: weighted avg<br/>votes: [...4 votes]<br/>agreement: 0-1<br/>method: majority/weighted/consensus"]
     end
 
     STATE --> Q1
