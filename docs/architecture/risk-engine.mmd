@@ -1,9 +1,9 @@
 flowchart TD
     subgraph Input["Risk Evaluation Input"]
-        DEC[JevDecision\nchoice, prob, conf]
-        PORT[PortfolioState\nbalance, pos, avgEntry, dailyPnL]
-        PRICE[Current Price\norderbook.mid]
-        ATR[ATR(14)\nfrom bars]
+        DEC["JevDecision<br/>choice, prob, conf"]
+        PORT["PortfolioState<br/>balance, pos, avgEntry, dailyPnL"]
+        PRICE["Current Price<br/>orderbook.mid"]
+        ATR["ATR(14)<br/>from bars"]
     end
 
     DEC --> R0
@@ -21,34 +21,34 @@ flowchart TD
     DEC --> B5
 
     subgraph Rules["Evaluation Order (First Match Wins)"]
-        R0[Rule 0: Cooldown\nif now < haltUntil → REJECT "COOLDOWN_ACTIVE"]
+        R0["Rule 0: Cooldown<br/>if now < haltUntil -> REJECT COOLDOWN_ACTIVE"]
         
-        B1[Rule B1: Max Daily Drawdown\nif dailyPnL/balance < -3% → REJECT "MAX_DRAWDOWN"]
+        B1["Rule B1: Max Daily Drawdown<br/>if dailyPnL/balance < -3% -> REJECT MAX_DRAWDOWN"]
         
-        B2[Rule B2: Stop-Loss (ATR)\nif pos>0 && price < avgEntry - 2×ATR → REJECT "STOP_LOSS"]
+        B2["Rule B2: Stop-Loss (ATR)<br/>if pos>0 && price < avgEntry - 2xATR -> REJECT STOP_LOSS"]
         
-        B3[Rule B3: Take-Profit (ATR)\nif pos>0 && price > avgEntry + 3×ATR → APPROVE SELL "TAKE_PROFIT_HIT"]
+        B3["Rule B3: Take-Profit (ATR)<br/>if pos>0 && price > avgEntry + 3xATR -> APPROVE SELL TAKE_PROFIT_HIT"]
         
-        B4[Rule B4: Trailing Stop\nif pos>0:\n  if profit > 1.5×ATR → activate\n  if active && price < trailPrice → REJECT "TRAILING_STOP"\n  if newTrail > trailPrice → ratchet up]
+        B4["Rule B4: Trailing Stop<br/>if pos>0:<br/>  if profit > 1.5xATR -> activate<br/>  if active && price < trailPrice -> REJECT TRAILING_STOP<br/>  if newTrail > trailPrice -> ratchet up"]
         
-        B5[Rule B5: Consecutive Losses\nif losses ≥ 5:\n  haltUntil = now + 30×200ms\n  REJECT "MAX_CONSECUTIVE_LOSSES"\n  ✓ FIX: after cooldown, losses reset to 0]
+        B5["Rule B5: Consecutive Losses<br/>if losses >= 5:<br/>  haltUntil = now + 30x200ms<br/>  REJECT MAX_CONSECUTIVE_LOSSES<br/>  FIX: after cooldown, losses reset to 0"]
         
-        B6[Rule B6: Trade Frequency\nif trades in last 60s ≥ 10 → REJECT "FREQUENCY_LIMIT"]
+        B6["Rule B6: Trade Frequency<br/>if trades in last 60s >= 10 -> REJECT FREQUENCY_LIMIT"]
         
-        B7[Rule B7: Max Leverage\nif (pos+size)×price / balance > 1.0 → REJECT "MAX_LEVERAGE_EXCEEDED"]
+        B7["Rule B7: Max Leverage<br/>if (pos+size)xprice / balance > 1.0 -> REJECT MAX_LEVERAGE_EXCEEDED"]
         
-        C1[Rule C: Position Size\nif BUY && pos ≥ 10000 → REJECT "MAX_POSITION_REACHED"]
+        C1["Rule C: Position Size<br/>if BUY && pos >= 10000 -> REJECT MAX_POSITION_REACHED"]
         
-        A1[Rule A: Probability Threshold\nif choice≠HOLD && prob ≤ 0.88 → REJECT "PROBABILITY_BELOW_THRESHOLD"]
+        A1["Rule A: Probability Threshold<br/>if choice!=HOLD && prob <= 0.88 -> REJECT PROBABILITY_BELOW_THRESHOLD"]
     end
 
     subgraph Sizing["Position Sizing (if APPROVE BUY)"]
-        SZ[size = floor(balance × 0.02 / price)\nsize = max(size, 1)\nsize = min(size, 10000 - pos)]
+        SZ["size = floor(balance x 0.02 / price)<br/>size = max(size, 1)<br/>size = min(size, 10000 - pos)"]
     end
 
     subgraph Output["RiskVerdict"]
-        APP[approved: true\naction: BUY/SELL/HOLD\nreason: "APPROVED" / rule name\nsize: calculated]
-        REJ[approved: false\naction: choice\nreason: rule name\nsize: 0]
+        APP["approved: true<br/>action: BUY/SELL/HOLD<br/>reason: APPROVED / rule name<br/>size: calculated"]
+        REJ["approved: false<br/>action: choice<br/>reason: rule name<br/>size: 0"]
     end
 
     R0 --> B1

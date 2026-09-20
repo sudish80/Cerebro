@@ -1,39 +1,39 @@
 flowchart TD
     subgraph Input["Ensemble Input"]
-        STATE[State String\n"BLK:1|T:...|O:100|..."]
-        CFG[EnsembleConfig\nqueryCount: 3\nmethod: weighted\nconfThresh: 0.3]
+        STATE["State String<br/>BLK:1|T:...|O:100|..."]
+        CFG["EnsembleConfig<br/>queryCount: 3<br/>method: weighted<br/>confThresh: 0.3"]
     end
 
     subgraph Angles["4 Instruction Angles"]
-        ANG1[Angle 1: Momentum\n"Focus on MOMENTUM and TREND...\nMACD crossovers, RSI extremes,\nvolume confirmation"]
-        ANG2[Angle 2: Risk\n"Focus on RISK MANAGEMENT...\ndrawdown limits, position sizing,\nstop-loss levels, risk/reward"]
-        ANG3[Angle 3: Mean Reversion\n"Focus on MEAN REVERSION...\nprice extremes, Bollinger touches,\nRSI divergence, oversold/overbought"]
-        ANG4[Angle 4: Breakout\n"Focus on BREAKOUT...\nconsolidation, Bollinger squeeze,\nvolume spikes, ATR expansion"]
+        ANG1["Angle 1: Momentum<br/>Focus on MOMENTUM and TREND<br/>MACD crossovers, RSI extremes, volume"]
+        ANG2["Angle 2: Risk<br/>Focus on RISK MANAGEMENT<br/>drawdown limits, position sizing"]
+        ANG3["Angle 3: Mean Reversion<br/>Focus on MEAN REVERSION<br/>price extremes, Bollinger, RSI divergence"]
+        ANG4["Angle 4: Breakout<br/>Focus on BREAKOUT<br/>consolidation, squeeze, volume spikes"]
     end
 
     subgraph Query["Parallel Jev Queries"]
-        Q1[queryJevWithQuestion\n(state, angle1) → JevDecision1]
-        Q2[queryJevWithQuestion\n(state, angle2) → JevDecision2]
-        Q3[queryJevWithQuestion\n(state, angle3) → JevDecision3]
-        Q4[queryJevWithQuestion\n(state, angle4) → JevDecision4]
+        Q1["queryJevWithQuestion<br/>(state, angle1) -> JevDecision1"]
+        Q2["queryJevWithQuestion<br/>(state, angle2) -> JevDecision2"]
+        Q3["queryJevWithQuestion<br/>(state, angle3) -> JevDecision3"]
+        Q4["queryJevWithQuestion<br/>(state, angle4) -> JevDecision4"]
     end
 
     subgraph Votes["Vote Collection"]
-        V1[Vote1: {choice, prob, conf}]
-        V2[Vote2: {choice, prob, conf}]
-        V3[Vote3: {choice, prob, conf}]
-        V4[Vote4: {choice, prob, conf}]
-        FILTER[Filter: conf ≥ 0.3]
+        V1["Vote1: {choice, prob, conf}"]
+        V2["Vote2: {choice, prob, conf}"]
+        V3["Vote3: {choice, prob, conf}"]
+        V4["Vote4: {choice, prob, conf}"]
+        FILTER["Filter: conf >= 0.3"]
     end
 
     subgraph Methods["Aggregation Methods"]
-        MAJ[Majority Voting\nCount votes per choice\nPick highest count\nTie → HOLD]
-        WGT[Weighted Voting\nΣ(prob × conf) per choice\nPick highest weighted sum]
-        CON[Consensus\nAll non-HOLD agree?\n  All BUY → BUY\n  All SELL → SELL\n  Else → HOLD]
+        MAJ["Majority Voting<br/>Count votes per choice<br/>Pick highest count<br/>Tie -> HOLD"]
+        WGT["Weighted Voting<br/>Sum(prob * conf) per choice<br/>Pick highest weighted sum"]
+        CON["Consensus<br/>All non-HOLD agree?<br/>All BUY -> BUY<br/>All SELL -> SELL<br/>Else -> HOLD"]
     end
 
     subgraph Output["EnsembleDecision"]
-        FINAL[finalDecision: BUY/SELL/HOLD\nfinalProbability: weighted avg\nfinalConfidence: weighted avg\nvotes: [...4 votes]\nagreement: 0-1\nmethod: majority/weighted/consensus]
+        FINAL["finalDecision: BUY/SELL/HOLD<br/>finalProbability: weighted avg<br/>finalConfidence: weighted avg<br/>votes: [...4 votes]<br/>agreement: 0-1<br/>method: majority/weighted/consensus"]
     end
 
     STATE --> Q1

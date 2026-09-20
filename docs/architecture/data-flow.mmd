@@ -3,59 +3,59 @@ flowchart LR
         direction TB
         
         subgraph Input["1. Input"]
-            BAR_IN[New Bar\nOHLCV]
-            OB_IN[Order Book\nSnapshot]
+            BAR_IN["New Bar<br/>OHLCV"]
+            OB_IN["Order Book<br/>Snapshot"]
         end
         
         subgraph Compute["2. Compute"]
-            IND_C[computeAllIndicators\n136 values]
-            MTF_C[computeMultiTimeframe\nDownsample → 4 TFs]
-            ATR_C[calcATR\nATR(14)]
+            IND_C["computeAllIndicators<br/>136 values"]
+            MTF_C["computeMultiTimeframe<br/>Downsample -> 4 TFs"]
+            ATR_C["calcATR<br/>ATR(14)"]
         end
         
         subgraph Format["3. Format State"]
-            BLK[StateBlock\nbar, ob, indicators, portfolio]
-            STR[formatStateBlock\n"BLK:1|T:...|O:100|..."]
+            BLK["StateBlock<br/>bar, ob, indicators, portfolio"]
+            STR["formatStateBlock<br/>BLK:1|T:...|O:100|..."]
         end
         
         subgraph Brain["4. AI Decision"]
-            QRY[queryJev / queryEnsemble\nHTTPS POST → TypeSafe]
-            ENS[Ensemble Aggregation\nMajority/Weighted/Consensus]
-            FALL[Fallback: HOLD\nif timeout/error]
+            QRY["queryJev / queryEnsemble<br/>HTTPS POST -> TypeSafe"]
+            ENS["Ensemble Aggregation<br/>Majority/Weighted/Consensus"]
+            FALL["Fallback: HOLD<br/>if timeout/error"]
         end
         
         subgraph Safety["5. Risk Gates"]
-            R0[Rule 0: Cooldown\nactive? → REJECT]
-            B1[Rule B1: Max Drawdown\n>3%? → REJECT]
-            B2[Rule B2: Stop-Loss\nprice < entry-2ATR? → REJECT]
-            B3[Rule B3: Take-Profit\nprice > entry+3ATR? → SELL]
-            B4[Rule B4: Trailing Stop\nactivated & hit? → REJECT]
-            B5[Rule B5: Consec Losses\n≥5? → COOLDOWN]
-            B6[Rule B6: Frequency\n>10/min? → REJECT]
-            B7[Rule B7: Leverage\nexposure > 1x? → REJECT]
-            C1[Rule C: Position Size\nat max? → REJECT]
-            A1[Rule A: Probability\n≤0.88? → REJECT]
-            SZ[Position Sizing\n2% equity / price]
+            R0["Rule 0: Cooldown<br/>active? -> REJECT"]
+            B1["Rule B1: Max Drawdown<br/>>>3%? -> REJECT"]
+            B2["Rule B2: Stop-Loss<br/>price < entry-2ATR? -> REJECT"]
+            B3["Rule B3: Take-Profit<br/>price > entry+3ATR? -> SELL"]
+            B4["Rule B4: Trailing Stop<br/>activated & hit? -> REJECT"]
+            B5["Rule B5: Consec Losses<br/>>>=5? -> COOLDOWN"]
+            B6["Rule B6: Frequency<br/>>>10/min? -> REJECT"]
+            B7["Rule B7: Leverage<br/>exposure > 1x? -> REJECT"]
+            C1["Rule C: Position Size<br/>at max? -> REJECT"]
+            A1["Rule A: Probability<br/>>=0.88? -> REJECT"]
+            SZ["Position Sizing<br/>2% equity / price"]
         end
         
         subgraph Comply["6. Compliance"]
-            KYC[checkTransaction\nfrom, to, value, ts]
-            SCR[Screen\nsanctions, PEP, mixer]
+            KYC["checkTransaction<br/>from, to, value, ts"]
+            SCR["Screen<br/>sanctions, PEP, mixer"]
         end
         
         subgraph Execute["7. Execute"]
-            RT[routeOrder\nIOC/LIMIT/SPLIT]
-            SIM[simulate eth_call]
-            SIGN[viem sign tx]
-            BCAST[broadcast tx]
-            RECP[receipt + nonce]
+            RT["routeOrder<br/>IOC/LIMIT/SPLIT"]
+            SIM["simulate eth_call"]
+            SIGN["viem sign tx"]
+            BCAST["broadcast tx"]
+            RECP["receipt + nonce"]
         end
         
         subgraph Record["8. Record"]
-            PORT[updatePortfolio\nbalance, pos, avgEntry, fees]
-            RTN[recordTradeOutcome\npnl → risk engine]
-            PERS[saveTrade\nfull TradeRecord]
-            CHKP[checkpoint\nportfolio + risk state]
+            PORT["updatePortfolio<br/>balance, pos, avgEntry, fees"]
+            RTN["recordTradeOutcome<br/>pnl -> risk engine"]
+            PERS["saveTrade<br/>full TradeRecord"]
+            CHKP["checkpoint<br/>portfolio + risk state"]
         end
     end
 

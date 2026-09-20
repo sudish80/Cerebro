@@ -1,49 +1,49 @@
 flowchart TB
     subgraph MarketData["Market Data Layer"]
-        WS[("Kuru CLOB\nWebSocket")]
-        SIM[("Simulated Feed\n(Random Walk)")]
-        FEED{MarketDataFeed<br/>Interface}
+        WS["Kuru CLOB<br/>WebSocket"]
+        SIM["Simulated Feed<br/>(Random Walk)"]
+        FEED{"MarketDataFeed<br/>Interface"}
     end
 
     subgraph Core["Core Processing Layer"]
-        BAR[Bar Aggregator\n1s candles]
-        OB[Order Book\nParser]
-        IND[Indicators Engine\n136 indicators]
-        MTF[Multi-Timeframe\n1m/5m/15m/60m]
-        FMT[State Formatter\nDense string]
+        BAR["Bar Aggregator<br/>1s candles"]
+        OB["Order Book<br/>Parser"]
+        IND["Indicators Engine<br/>136 indicators"]
+        MTF["Multi-Timeframe<br/>1m/5m/15m/60m"]
+        FMT["State Formatter<br/>Dense string"]
     end
 
     subgraph Brain["AI Brain Layer"]
-        JEV[TypeSafe Jev API]
-        ENS[Ensemble Voter\n3-5 queries]
-        ANGLE[Instruction Angles<br/>Momentum/Risk/Reversion/Breakout]
-        CACHE[Decision Cache\nSQLite + TTL]
+        JEV["TypeSafe Jev API"]
+        ENS["Ensemble Voter<br/>3-5 queries"]
+        ANGLE["Instruction Angles<br/>Momentum/Risk/Reversion/Breakout"]
+        CACHE["Decision Cache<br/>SQLite + TTL"]
     end
 
     subgraph Safety["Risk & Safety Layer"]
-        RISK[Risk Engine\nATR stops, trailing, cooldown]
-        COMP[Compliance Engine\nKYC/AML/Sanctions]
-        RL[Rate Limiter\nToken bucket + 429]
+        RISK["Risk Engine<br/>ATR stops, trailing, cooldown"]
+        COMP["Compliance Engine<br/>KYC/AML/Sanctions"]
+        RL["Rate Limiter<br/>Token bucket + 429"]
     end
 
     subgraph Execution["Execution Layer"]
-        EXEC[Smart Router\nIOC/LIMIT/SPLIT]
-        WALLET[viem Wallet\nSigning + Nonce]
-        REORG[Reorg Monitor\nChain reorg detection]
+        EXEC["Smart Router<br/>IOC/LIMIT/SPLIT"]
+        WALLET["viem Wallet<br/>Signing + Nonce"]
+        REORG["Reorg Monitor<br/>Chain reorg detection"]
     end
 
     subgraph Persistence["Persistence Layer"]
-        SQLITE[(SQLite\nbun:sqlite)]
-        PORT[Portfolio State]
-        RSTATE[Risk State]
-        TRADES[Trade History]
-        JDEC[Jev Decisions]
+        SQLITE["SQLite<br/>bun:sqlite"]
+        PORT["Portfolio State"]
+        RSTATE["Risk State"]
+        TRADES["Trade History"]
+        JDEC["Jev Decisions"]
     end
 
     subgraph Observability["Observability"]
-        MET[Prometheus\n/metrics + /health]
-        LOG[Structured Logger\nJSON + Correlation ID]
-        ALERT[Alert Manager\nTelegram/Webhook/Console]
+        MET["Prometheus<br/>/metrics + /health"]
+        LOG["Structured Logger<br/>JSON + Correlation ID"]
+        ALERT["Alert Manager<br/>Telegram/Webhook/Console"]
     end
 
     WS --> FEED
