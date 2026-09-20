@@ -117,13 +117,21 @@ flowchart TB
     ALERT -.-> RISK
     ALERT -.-> COMP
 
-    style FEED fill:#e1f5fe,stroke:#01579b
-    style JEV fill:#fff3e0,stroke:#e65100
-    style ENS fill:#fff3e0,stroke:#e65100
-    style RISK fill:#fce4ec,stroke:#880e4f
-    style EXEC fill:#e8f5e9,stroke:#1b5e20
-    style SQLITE fill:#f3e5f5,stroke:#4a148c
-    style MET fill:#e0f2f1,stroke:#00695c
+    classDef marketData fill:#1e3a5f,color:#fff,stroke:#3b82f6,stroke-width:2px
+    classDef core fill:#0f4c4c,color:#fff,stroke:#14b8a6,stroke-width:2px
+    classDef brain fill:#7c2d12,color:#fff,stroke:#f97316,stroke-width:2px
+    classDef safety fill:#7f1d1d,color:#fff,stroke:#ef4444,stroke-width:2px
+    classDef execution fill:#14532d,color:#fff,stroke:#22c55e,stroke-width:2px
+    classDef persistence fill:#4c1d95,color:#fff,stroke:#a855f7,stroke-width:2px
+    classDef observability fill:#0e4e4e,color:#fff,stroke:#06b6d4,stroke-width:2px
+
+    class WS,SIM,FEED marketData
+    class BAR,OB,IND,MTF,FMT core
+    class JEV,ENS,ANGLE,CACHE brain
+    class RISK,COMP,RL safety
+    class EXEC,WALLET,REORG execution
+    class SQLITE,PORT,RSTATE,TRADES,JDEC persistence
+    class MET,LOG,ALERT observability
 ```
 
 ### Data Flow (Single Tick)
@@ -222,23 +230,25 @@ flowchart LR
     RTN --> PERS
     PERS --> CHKP
 
-    style QRY fill:#fff3e0,stroke:#e65100
-    style ENS fill:#fff3e0,stroke:#e65100
-    style FALL fill:#ffebee,stroke:#c62828
-    style R0 fill:#fce4ec,stroke:#880e4f
-    style B1 fill:#fce4ec,stroke:#880e4f
-    style B2 fill:#fce4ec,stroke:#880e4f
-    style B3 fill:#e8f5e9,stroke:#1b5e20
-    style B4 fill:#fce4ec,stroke:#880e4f
-    style B5 fill:#fce4ec,stroke:#880e4f
-    style B6 fill:#fce4ec,stroke:#880e4f
-    style B7 fill:#fce4ec,stroke:#880e4f
-    style C1 fill:#fce4ec,stroke:#880e4f
-    style A1 fill:#fce4ec,stroke:#880e4f
-    style KYC fill:#fff8e1,stroke:#f57f17
-    style SCR fill:#fff8e1,stroke:#f57f17
-    style SIGN fill:#e8f5e9,stroke:#1b5e20
-    style BCAST fill:#e8f5e9,stroke:#1b5e20
+    classDef input fill:#1e3a5f,color:#fff,stroke:#3b82f6,stroke-width:2px
+    classDef compute fill:#0f4c4c,color:#fff,stroke:#14b8a6,stroke-width:2px
+    classDef format fill:#0f4c4c,color:#fff,stroke:#14b8a6,stroke-width:2px
+    classDef brain fill:#7c2d12,color:#fff,stroke:#f97316,stroke-width:2px
+    classDef safety fill:#7f1d1d,color:#fff,stroke:#ef4444,stroke-width:2px
+    classDef compliance fill:#92400e,color:#fff,stroke:#f59e0b,stroke-width:2px
+    classDef execute fill:#14532d,color:#fff,stroke:#22c55e,stroke-width:2px
+    classDef record fill:#4c1d95,color:#fff,stroke:#a855f7,stroke-width:2px
+    classDef fallback fill:#ffebee,color:#000,stroke:#ef4444,stroke-width:2px,stroke-dasharray: 5 5
+
+    class BAR_IN,OB_IN input
+    class IND_C,MTF_C,ATR_C compute
+    class BLK,STR format
+    class QRY,ENS brain
+    class FALL fallback
+    class R0,B1,B2,B3,B4,B5,B6,B7,C1,A1,SZ safety
+    class KYC,SCR compliance
+    class RT,SIM,SIGN,BCAST,RECP execute
+    class PORT,RTN,PERS,CHKP record
 ```
 
 ### Risk Engine Evaluation Order
@@ -319,19 +329,20 @@ flowchart TD
     C1 -.-> REJ
     A1 -.-> REJ
 
-    style R0 fill:#fff8e1,stroke:#f57f17
-    style B1 fill:#fce4ec,stroke:#880e4f
-    style B2 fill:#fce4ec,stroke:#880e4f
-    style B3 fill:#e8f5e9,stroke:#1b5e20
-    style B4 fill:#fce4ec,stroke:#880e4f
-    style B5 fill:#fce4ec,stroke:#880e4f
-    style B6 fill:#fce4ec,stroke:#880e4f
-    style B7 fill:#fce4ec,stroke:#880e4f
-    style C1 fill:#fce4ec,stroke:#880e4f
-    style A1 fill:#fce4ec,stroke:#880e4f
-    style APP fill:#e8f5e9,stroke:#1b5e20
-    style REJ fill:#ffebee,stroke:#c62828
-    style SZ fill:#e3f2fd,stroke:#0d47a1
+    classDef input fill:#1e3a5f,color:#fff,stroke:#3b82f6,stroke-width:2px
+    classDef rule fill:#7f1d1d,color:#fff,stroke:#ef4444,stroke-width:2px
+    classDef approve fill:#14532d,color:#fff,stroke:#22c55e,stroke-width:2px
+    classDef reject fill:#7f1d1d,color:#fff,stroke:#ef4444,stroke-width:2px,stroke-dasharray: 5 5
+    classDef sizing fill:#0f4c4c,color:#fff,stroke:#14b8a6,stroke-width:2px
+    classDef outputApprove fill:#14532d,color:#fff,stroke:#22c55e,stroke-width:2px
+    classDef outputReject fill:#7f1d1d,color:#fff,stroke:#ef4444,stroke-width:2px,stroke-dasharray: 5 5
+
+    class DEC,PORT,PRICE,ATR input
+    class R0,B1,B2,B4,B5,B6,B7,C1,A1 rule
+    class B3 approve
+    class SZ sizing
+    class APP outputApprove
+    class REJ outputReject
 ```
 
 ### Ensemble Decision Maker
@@ -411,14 +422,21 @@ flowchart TD
     WGT --> FINAL
     CON --> FINAL
 
-    style Q1 fill:#fff3e0,stroke:#e65100
-    style Q2 fill:#fff3e0,stroke:#e65100
-    style Q3 fill:#fff3e0,stroke:#e65100
-    style Q4 fill:#fff3e0,stroke:#e65100
-    style MAJ fill:#e3f2fd,stroke:#0d47a1
-    style WGT fill:#e3f2fd,stroke:#0d47a1
-    style CON fill:#e3f2fd,stroke:#0d47a1
-    style FINAL fill:#e8f5e9,stroke:#1b5e20
+    classDef input fill:#1e3a5f,color:#fff,stroke:#3b82f6,stroke-width:2px
+    classDef angle fill:#7c2d12,color:#fff,stroke:#f97316,stroke-width:2px
+    classDef query fill:#7c2d12,color:#fff,stroke:#f97316,stroke-width:2px
+    classDef vote fill:#0f4c4c,color:#fff,stroke:#14b8a6,stroke-width:2px
+    classDef filter fill:#92400e,color:#fff,stroke:#f59e0b,stroke-width:2px
+    classDef method fill:#0e4e4e,color:#fff,stroke:#06b6d4,stroke-width:2px
+    classDef output fill:#4c1d95,color:#fff,stroke:#a855f7,stroke-width:2px
+
+    class STATE,CFG input
+    class ANG1,ANG2,ANG3,ANG4 angle
+    class Q1,Q2,Q3,Q4 query
+    class V1,V2,V3,V4,V5 vote
+    class FILTER filter
+    class MAJ,WGT,CON method
+    class FINAL output
 ```
 
 ### Module Map

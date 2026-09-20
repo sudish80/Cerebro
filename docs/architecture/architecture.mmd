@@ -81,10 +81,18 @@ flowchart TB
     ALERT -.-> RISK
     ALERT -.-> COMP
 
-    style FEED fill:#e1f5fe,stroke:#01579b
-    style JEV fill:#fff3e0,stroke:#e65100
-    style ENS fill:#fff3e0,stroke:#e65100
-    style RISK fill:#fce4ec,stroke:#880e4f
-    style EXEC fill:#e8f5e9,stroke:#1b5e20
-    style SQLITE fill:#f3e5f5,stroke:#4a148c
-    style MET fill:#e0f2f1,stroke:#00695c
+    classDef marketData fill:#1e3a5f,color:#fff,stroke:#3b82f6,stroke-width:2px
+    classDef core fill:#0f4c4c,color:#fff,stroke:#14b8a6,stroke-width:2px
+    classDef brain fill:#7c2d12,color:#fff,stroke:#f97316,stroke-width:2px
+    classDef safety fill:#7f1d1d,color:#fff,stroke:#ef4444,stroke-width:2px
+    classDef execution fill:#14532d,color:#fff,stroke:#22c55e,stroke-width:2px
+    classDef persistence fill:#4c1d95,color:#fff,stroke:#a855f7,stroke-width:2px
+    classDef observability fill:#0e4e4e,color:#fff,stroke:#06b6d4,stroke-width:2px
+
+    class WS,SIM,FEED marketData
+    class BAR,OB,IND,MTF,FMT core
+    class JEV,ENS,ANGLE,CACHE brain
+    class RISK,COMP,RL safety
+    class EXEC,WALLET,REORG execution
+    class SQLITE,PORT,RSTATE,TRADES,JDEC persistence
+    class MET,LOG,ALERT observability

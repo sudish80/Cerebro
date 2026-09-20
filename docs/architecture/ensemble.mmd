@@ -72,11 +72,18 @@ flowchart TD
     WGT --> FINAL
     CON --> FINAL
 
-    style Q1 fill:#fff3e0,stroke:#e65100
-    style Q2 fill:#fff3e0,stroke:#e65100
-    style Q3 fill:#fff3e0,stroke:#e65100
-    style Q4 fill:#fff3e0,stroke:#e65100
-    style MAJ fill:#e3f2fd,stroke:#0d47a1
-    style WGT fill:#e3f2fd,stroke:#0d47a1
-    style CON fill:#e3f2fd,stroke:#0d47a1
-    style FINAL fill:#e8f5e9,stroke:#1b5e20
+    classDef input fill:#1e3a5f,color:#fff,stroke:#3b82f6,stroke-width:2px
+    classDef angle fill:#7c2d12,color:#fff,stroke:#f97316,stroke-width:2px
+    classDef query fill:#7c2d12,color:#fff,stroke:#f97316,stroke-width:2px
+    classDef vote fill:#0f4c4c,color:#fff,stroke:#14b8a6,stroke-width:2px
+    classDef filter fill:#92400e,color:#fff,stroke:#f59e0b,stroke-width:2px
+    classDef method fill:#0e4e4e,color:#fff,stroke:#06b6d4,stroke-width:2px
+    classDef output fill:#4c1d95,color:#fff,stroke:#a855f7,stroke-width:2px
+
+    class STATE,CFG input
+    class ANG1,ANG2,ANG3,ANG4 angle
+    class Q1,Q2,Q3,Q4 query
+    class V1,V2,V3,V4,V5 vote
+    class FILTER filter
+    class MAJ,WGT,CON method
+    class FINAL output

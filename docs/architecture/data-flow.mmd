@@ -30,11 +30,11 @@ flowchart LR
             B2["Rule B2: Stop-Loss<br/>price < entry-2ATR? -> REJECT"]
             B3["Rule B3: Take-Profit<br/>price > entry+3ATR? -> SELL"]
             B4["Rule B4: Trailing Stop<br/>activated & hit? -> REJECT"]
-            B5["Rule B5: Consec Losses<br/>>>=5? -> COOLDOWN"]
+            B5["Rule B5: Consec Losses<br/>>>5? -> COOLDOWN"]
             B6["Rule B6: Frequency<br/>>>10/min? -> REJECT"]
             B7["Rule B7: Leverage<br/>exposure > 1x? -> REJECT"]
             C1["Rule C: Position Size<br/>at max? -> REJECT"]
-            A1["Rule A: Probability<br/>>=0.88? -> REJECT"]
+            A1["Rule A: Probability<br/>>>0.88? -> REJECT"]
             SZ["Position Sizing<br/>2% equity / price"]
         end
         
@@ -91,20 +91,22 @@ flowchart LR
     RTN --> PERS
     PERS --> CHKP
 
-    style QRY fill:#fff3e0,stroke:#e65100
-    style ENS fill:#fff3e0,stroke:#e65100
-    style FALL fill:#ffebee,stroke:#c62828
-    style R0 fill:#fce4ec,stroke:#880e4f
-    style B1 fill:#fce4ec,stroke:#880e4f
-    style B2 fill:#fce4ec,stroke:#880e4f
-    style B3 fill:#e8f5e9,stroke:#1b5e20
-    style B4 fill:#fce4ec,stroke:#880e4f
-    style B5 fill:#fce4ec,stroke:#880e4f
-    style B6 fill:#fce4ec,stroke:#880e4f
-    style B7 fill:#fce4ec,stroke:#880e4f
-    style C1 fill:#fce4ec,stroke:#880e4f
-    style A1 fill:#fce4ec,stroke:#880e4f
-    style KYC fill:#fff8e1,stroke:#f57f17
-    style SCR fill:#fff8e1,stroke:#f57f17
-    style SIGN fill:#e8f5e9,stroke:#1b5e20
-    style BCAST fill:#e8f5e9,stroke:#1b5e20
+    classDef input fill:#1e3a5f,color:#fff,stroke:#3b82f6,stroke-width:2px
+    classDef compute fill:#0f4c4c,color:#fff,stroke:#14b8a6,stroke-width:2px
+    classDef format fill:#0f4c4c,color:#fff,stroke:#14b8a6,stroke-width:2px
+    classDef brain fill:#7c2d12,color:#fff,stroke:#f97316,stroke-width:2px
+    classDef safety fill:#7f1d1d,color:#fff,stroke:#ef4444,stroke-width:2px
+    classDef compliance fill:#92400e,color:#fff,stroke:#f59e0b,stroke-width:2px
+    classDef execute fill:#14532d,color:#fff,stroke:#22c55e,stroke-width:2px
+    classDef record fill:#4c1d95,color:#fff,stroke:#a855f7,stroke-width:2px
+    classDef fallback fill:#ffebee,color:#000,stroke:#ef4444,stroke-width:2px,stroke-dasharray: 5 5
+
+    class BAR_IN,OB_IN input
+    class IND_C,MTF_C,ATR_C compute
+    class BLK,STR format
+    class QRY,ENS brain
+    class FALL fallback
+    class R0,B1,B2,B3,B4,B5,B6,B7,C1,A1,SZ safety
+    class KYC,SCR compliance
+    class RT,SIM,SIGN,BCAST,RECP execute
+    class PORT,RTN,PERS,CHKP record
